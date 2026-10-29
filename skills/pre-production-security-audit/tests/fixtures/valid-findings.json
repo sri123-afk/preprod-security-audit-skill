@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "project": "example-shop",
+  "run": 1,
+  "generated": "2026-10-29T00:00:00Z",
+  "scope": { "description": "Full audit of main branch", "commit": "abc1234", "excluded": ["vendor/"] },
+  "findings": [
+    {
+      "id": "SEC-001",
+      "title": "Orders endpoint lacks tenant predicate",
+      "verdict": "confirmed",
+      "kind": "vulnerability",
+      "severity": "P1",
+      "reachability": "authenticated",
+      "domains": [19],
+      "attack_class": "CORE-07",
+      "cwe": ["CWE-639"],
+      "owasp": "A01:2025",
+      "location": { "file": "src/orders/get.ts", "start_line": 20, "end_line": 41 },
+      "source_trace": [
+        { "file": "src/orders/get.ts", "line": 21, "role": "source", "note": "id from path" },
+        { "file": "src/orders/get.ts", "line": 33, "role": "sink", "note": "query by id only" }
+      ],
+      "exploit_scenario": "A user in tenant A requests an order id from tenant B and receives it because the query filters on id alone.",
+      "evidence": ["src/orders/get.ts:L33 SELECT * FROM orders WHERE id = $1"],
+      "impact": "Cross-tenant disclosure of order data.",
+      "fix": { "status": "proposed", "summary": "Add tenant predicate and row-level security" },
+      "regression_test": { "status": "proposed", "description": "Two-tenant test expects 404 for a foreign order id" },
+      "residual_risk": "Sibling endpoints need the same review.",
+      "verification": { "verifier_outcome": "upheld", "record_verified": true }
+    },
+    {
+      "id": "SEC-002",
+      "title": "Webhook replay window may be too wide",
+      "verdict": "needs_validation",
+      "domains": [1, 22],
+      "attack_class": "WEB-09",
+      "unresolved_fact": "Whether the processed_events table has a UNIQUE constraint on event id in the production schema."
+    },
+    {
+      "id": "SEC-003",
+      "title": "Admin route reachable without auth",
+      "verdict": "rejected",
+      "domains": [19],
+      "attack_class": "WEB-01",
+      "rejection_reason": "Route is behind the fallback authorization policy (Program.cs:L18) and covered by tests."
+    },
+    {
+      "id": "SEC-004",
+      "title": "Missing Permissions-Policy header",
+      "verdict": "confirmed",
+      "kind": "hardening",
+      "severity": "P3",
+      "reachability": "unauthenticated_remote",
+      "domains": [23],
+      "attack_class": "WEB-16",
+      "cwe": ["CWE-693"],
+      "owasp": "A02:2025",
+      "location": { "file": "next.config.js", "start_line": 5, "end_line": 12 },
+      "source_trace": [
+        { "file": "next.config.js", "line": 5, "role": "source", "note": "headers() config" },
+        { "file": "next.config.js", "line": 12, "role": "sink", "note": "no Permissions-Policy emitted" }
+      ],
+      "exploit_scenario": "No exploit path found; header would reduce browser feature exposure if another flaw appears.",
+      "evidence": ["next.config.js:L5-L12"],
+      "impact": "Hardening only.",
+      "verification": { "verifier_outcome": "upheld", "record_verified": true }
+    }
+  ]
+}

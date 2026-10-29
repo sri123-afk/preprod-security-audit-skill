@@ -1,0 +1,24 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Archives and Release Artifacts
+*.zip
+*.tar.gz
+*.tgz
+security-audit-addendum.md
+
+# Audit Output Artifacts
+findings.json
+findings.sarif
+coverage-ledger.json
+REPORT.md
+FINDINGS-DETAIL.md
+NEEDS-VALIDATION.md
+gates.json
+architecture.md
+run-*/
+audit-out-*/
+
+# Node dependencies
+node_modules/

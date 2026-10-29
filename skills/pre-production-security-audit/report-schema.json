@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sri123-afk/preprod-security-audit-skill/blob/main/skills/pre-production-security-audit/report-schema.json",
+  "title": "Pre-Production Security Audit findings.json",
+  "type": "object",
+  "required": ["schema_version", "project", "run", "generated", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "project": { "type": "string", "minLength": 1 },
+    "run": { "type": "integer", "minimum": 1 },
+    "generated": { "type": "string", "format": "date-time" },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "commit": { "type": "string" },
+        "excluded": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "release_recommendation": { "enum": ["Block", "Fix before release", "Accept with tracked ticket"] },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+  },
+  "$defs": {
+    "trace_step": {
+      "type": "object",
+      "required": ["file", "line", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "role": { "enum": ["source", "propagation", "check", "sink"] },
+        "note": { "type": "string" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": ["id", "title", "verdict", "domains", "attack_class"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^SEC-\\d{3,}$" },
+        "title": { "type": "string", "minLength": 5 },
+        "verdict": { "enum": ["confirmed", "needs_validation", "rejected"] },
+        "kind": { "enum": ["vulnerability", "hardening"] },
+        "severity": { "enum": ["P0", "P1", "P2", "P3"] },
+        "reachability": { "enum": ["unauthenticated_remote", "authenticated", "local_or_internal"] },
+        "domains": { "type": "array", "minItems": 1, "items": { "type": "integer", "minimum": 1, "maximum": 30 } },
+        "attack_class": { "type": "string", "pattern": "^((CORE|WEB|CLI|SC|CLD|DATA|RES|AI|MOB|CRY)-\\d{2}|STK-[A-Z]+-\\d{2})$" },
+        "cwe": { "type": "array", "items": { "type": "string", "pattern": "^CWE-\\d+$" } },
+        "owasp": { "type": "string", "pattern": "^A(0[1-9]|10):2025$" },
+        "asi": { "type": "string", "pattern": "^ASI(0[1-9]|10)$" },
+        "location": {
+          "type": "object",
+          "required": ["file", "start_line", "end_line"],
+          "additionalProperties": false,
+          "properties": {
+            "file": { "type": "string", "minLength": 1 },
+            "start_line": { "type": "integer", "minimum": 1 },
+            "end_line": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "source_trace": { "type": "array", "items": { "$ref": "#/$defs/trace_step" } },
+        "exploit_scenario": { "type": "string", "minLength": 20 },
+        "evidence": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "impact": { "type": "string" },
+        "fix": {
+          "type": "object",
+          "properties": {
+            "status": { "enum": ["proposed", "applied", "not_applicable"] },
+            "summary": { "type": "string" },
+            "diff": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "regression_test": {
+          "type": "object",
+          "properties": {
+            "status": { "enum": ["proposed", "written", "verified"] },
+            "description": { "type": "string" },
+            "path": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "residual_risk": { "type": "string" },
+        "unresolved_fact": { "type": "string" },
+        "rejection_reason": { "type": "string" },
+        "verification": {
+          "type": "object",
+          "required": ["verifier_outcome", "record_verified"],
+          "additionalProperties": false,
+          "properties": {
+            "verifier_outcome": { "enum": ["upheld", "downgraded", "replaced", "not_run"] },
+            "record_verified": { "type": "boolean" },
+            "notes": { "type": "string" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "verdict": { "const": "confirmed" } } },
+          "then": {
+            "required": ["severity", "reachability", "cwe", "owasp", "location", "source_trace", "exploit_scenario", "evidence", "impact", "verification"]
+          }
+        },
+        {
+          "if": { "properties": { "verdict": { "const": "needs_validation" } } },
+          "then": { "required": ["unresolved_fact"], "not": { "required": ["severity"] } }
+        },
+        {
+          "if": { "properties": { "verdict": { "const": "rejected" } } },
+          "then": { "required": ["rejection_reason"] }
+        }
+      ]
+    }
+  }
+}

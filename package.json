@@ -1,0 +1,11 @@
+{
+  "name": "preprod-security-audit-skill",
+  "version": "1.0.0",
+  "description": "Multi-phase pre-production security audit and remediation skill for coding agents and LLMs",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "test": "node --test skills/pre-production-security-audit/tests/audit-tools.test.cjs"
+  },
+  "engines": { "node": ">=18" }
+}

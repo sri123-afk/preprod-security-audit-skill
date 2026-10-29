@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "project": "example-shop",
+  "run": 1,
+  "stack_profiles": ["nextjs", "neon", "vercel"],
+  "units": [
+    {
+      "id": "U-001",
+      "name": "Payment webhook ingress",
+      "files": ["app/api/webhooks/stripe/route.ts", "lib/payments/verify.ts"],
+      "entry_points": ["EP-014"],
+      "domains": [1, 7, 22],
+      "attack_classes": ["CORE-03", "WEB-09"],
+      "priority": "high",
+      "status": "checked",
+      "checks": [
+        { "class": "CORE-03", "result": "no_issue", "evidence": ["lib/payments/verify.ts:L12-L40"], "note": "constant-time, length-checked" },
+        { "class": "WEB-09", "result": "candidate", "evidence": ["app/api/webhooks/stripe/route.ts:L21"], "candidate_id": "C-007" }
+      ]
+    },
+    {
+      "id": "U-002",
+      "name": "Mobile app",
+      "files": ["mobile/lib/main.dart"],
+      "domains": [28],
+      "attack_classes": ["MOB-01"],
+      "priority": "low",
+      "status": "blocked",
+      "reason": "Source for the mobile app is in a separate private repository not provided",
+      "checks": []
+    }
+  ]
+}
